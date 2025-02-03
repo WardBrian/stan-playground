@@ -83,14 +83,16 @@ const progressPrintCallback = (msg: string) => {
   if (!msg) {
     return;
   }
+  console.log(msg);
+
   if (!msg.startsWith("Chain") && !msg.startsWith("Iteration:")) {
     // storing this has a not-insignificant overhead when a model
     // has print statements, but is much faster than posting
     // every single line to the main thread
     consoleText += msg + "\n";
-    console.log(msg);
     return;
   }
+
   const report = parseProgress(msg);
   postReply({ purpose: Replies.Progress, report });
 };
@@ -104,6 +106,7 @@ self.onmessage = (e: MessageEvent<StanModelRequestMessage>) => {
 
   switch (e.data.purpose) {
     case Requests.Load: {
+      console.log("Loading Stan model from " + e.data.url);
       import(/* @vite-ignore */ e.data.url)
         .then((js) => StanModel.load(js.default, progressPrintCallback))
         .then((m) => {
@@ -164,8 +167,8 @@ self.onmessage = (e: MessageEvent<StanModelRequestMessage>) => {
       }
       break;
     }
-    default: {
-      unreachable(e.data);
-    }
+    // default: {
+    //   unreachable(e.data);
+    // }
   }
 };

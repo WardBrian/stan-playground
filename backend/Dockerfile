@@ -24,12 +24,12 @@ RUN mkdir oneTBB/build && cd oneTBB/build && \
     -DCMAKE_C_COMPILER=emcc \
     -DCMAKE_BUILD_TYPE=MinSizeRel \
     -DTBB_STRICT=OFF \
-    -DCMAKE_CXX_FLAGS="-fwasm-exceptions -Wno-unused-command-line-argument" \
+    -DCMAKE_CXX_FLAGS="-fwasm-exceptions -Wno-unused-command-line-argument -pthread" \
     -DTBB_DISABLE_HWLOC_AUTOMATIC_SEARCH=ON \
     -DBUILD_SHARED_LIBS=ON \
     -DTBB_EXAMPLES=OFF \
     -DTBB_TEST=OFF \
-    -DEMSCRIPTEN_WITHOUT_PTHREAD=true \
+    -DEMSCRIPTEN_WITHOUT_PTHREAD=false \
     -DCMAKE_INSTALL_PREFIX=/app/oneTBB/install/ && \
     cmake --build . -j$(nproc) && \
     cmake --install .

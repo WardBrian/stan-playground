@@ -100,6 +100,7 @@ class StanSampler {
       data,
       seed: samplingOpts.seed !== undefined ? samplingOpts.seed : null,
       refresh,
+      num_threads: 4,
     };
     if (!this.#stanWorker) throw new Error("model worker is undefined");
 
