@@ -11,6 +11,7 @@ import {
 } from "./StanModelWorker";
 import { type StanRunAction } from "./useStanSampler";
 import StanWorkerUrl from "./StanModelWorker?worker&url";
+import StanModel from "tinystan";
 
 export type StanSamplerStatus =
   | ""
@@ -27,6 +28,7 @@ type StanSamplerAndCleanup = {
 
 class StanSampler {
   #stanWorker: Worker | undefined;
+  #stanModel: StanModel | undefined;
   #samplingStartTimeSec: number = 0;
 
   private constructor(
@@ -50,47 +52,59 @@ class StanSampler {
   }
 
   _initialize() {
-    this.#stanWorker = new Worker(StanWorkerUrl, {
-      name: "tinystan worker",
-      type: "module",
-    });
-
     this.update({ type: "clear" });
 
-    this.#stanWorker.onmessage = (e: MessageEvent<StanModelReplyMessage>) => {
-      switch (e.data.purpose) {
-        case Replies.Progress: {
-          this.update({ type: "progressUpdate", progress: e.data.report });
-          break;
-        }
-        case Replies.ModelLoaded: {
-          this.update({ type: "statusUpdate", status: "loaded" });
-          break;
-        }
-        case Replies.StanReturn: {
-          if (e.data.error !== null) {
-            this.update({
-              type: "statusUpdate",
-              status: "failed",
-              errorMessage: e.data.error,
-            });
-          } else {
-            this.update({
-              type: "samplerReturn",
-              draws: e.data.draws,
-              paramNames: e.data.paramNames,
-              computeTimeSec: Date.now() / 1000 - this.#samplingStartTimeSec,
-              consoleText: e.data.consoleText,
-            });
-          }
-          break;
-        }
-        default:
-          unreachable(e.data);
-      }
-    };
     this.update({ type: "statusUpdate", status: "loading" });
-    this.postMessage({ purpose: Requests.Load, url: this.compiledUrl });
+
+    import(/* @vite-ignore */ this.compiledUrl)
+      .then((js) => StanModel.load(js.default, console.log))
+      .then((m) => {
+        this.#stanModel = m;
+        console.log(
+          "Web Worker loaded Stan model built from version " + m.stanVersion(),
+        );
+      });
+    this.update({ type: "statusUpdate", status: "loaded" });
+
+    // this.#stanWorker = new Worker(StanWorkerUrl, {
+    //   name: "tinystan worker",
+    //   type: "module",
+    // });
+
+    // this.#stanWorker.onmessage = (e: MessageEvent<StanModelReplyMessage>) => {
+    //   switch (e.data.purpose) {
+    //     case Replies.Progress: {
+    //       this.update({ type: "progressUpdate", progress: e.data.report });
+    //       break;
+    //     }
+    //     case Replies.ModelLoaded: {
+    //       this.update({ type: "statusUpdate", status: "loaded" });
+    //       break;
+    //     }
+    //     case Replies.StanReturn: {
+    //       if (e.data.error !== null) {
+    //         this.update({
+    //           type: "statusUpdate",
+    //           status: "failed",
+    //           errorMessage: e.data.error,
+    //         });
+    //       } else {
+    //         this.update({
+    //           type: "samplerReturn",
+    //           draws: e.data.draws,
+    //           paramNames: e.data.paramNames,
+    //           computeTimeSec: Date.now() / 1000 - this.#samplingStartTimeSec,
+    //           consoleText: e.data.consoleText,
+    //         });
+    //       }
+    //       break;
+    //     }
+    //     default:
+    //       unreachable(e.data);
+    //   }
+    // };
+    // this.update({ type: "statusUpdate", status: "loading" });
+    // this.postMessage({ purpose: Requests.Load, url: this.compiledUrl });
   }
 
   sample(data: any, samplingOpts: SamplingOpts) {
@@ -100,14 +114,23 @@ class StanSampler {
       data,
       seed: samplingOpts.seed !== undefined ? samplingOpts.seed : null,
       refresh,
-      num_threads: 4,
+      num_threads: samplingOpts.num_chains,
     };
-    if (!this.#stanWorker) throw new Error("model worker is undefined");
+    if (!this.#stanModel) throw new Error("model worker is undefined");
 
     this.update({ type: "startSampling", samplingOpts, data });
 
     this.#samplingStartTimeSec = Date.now() / 1000;
-    this.postMessage({ purpose: Requests.Sample, sampleConfig });
+
+    const { paramNames, draws } = this.#stanModel.sample(sampleConfig);
+
+    this.update({
+      type: "samplerReturn",
+      draws: draws,
+      paramNames: paramNames,
+      computeTimeSec: Date.now() / 1000 - this.#samplingStartTimeSec,
+      consoleText: "todo",
+    });
   }
 
   private postMessage(message: StanModelRequestMessage) {

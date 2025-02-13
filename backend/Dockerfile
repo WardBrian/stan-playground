@@ -46,6 +46,7 @@ RUN git clone https://github.com/WardBrian/tinystan.git && \
 
 # Copy the local configuration file for TinyStan
 COPY local.mk /app/tinystan/make/local
+COPY pre.js /app/tinystan/pre.js
 
 # Build a test model
 RUN cd tinystan && \
