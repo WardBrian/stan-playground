@@ -90,6 +90,7 @@ DictResponse = dict[str, Any]
 
 @app.get("/probe")
 async def probe() -> DictResponse:
+    # TODO also return stancjs url?
     return {"status": "ok"}
 
 
