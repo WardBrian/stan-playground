@@ -5,6 +5,8 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import { FunctionComponent, use } from "react";
 
+import Converter from "ansi-to-html";
+
 type StanCompileResultProps = {
   stancErrors: StancErrors;
   onClose?: () => void;
@@ -21,7 +23,11 @@ const StanCompileResultPanel: FunctionComponent<StanCompileResultProps> = ({
         <h3>Errors</h3>
         {stancErrors.errors.slice(1).map((error, i) => (
           <div key={i} className="ErrorWarningMessage">
-            <pre>{error}</pre>
+            <pre
+              dangerouslySetInnerHTML={{
+                __html: new Converter().toHtml(error),
+              }}
+            ></pre>
           </div>
         ))}
       </Box>
