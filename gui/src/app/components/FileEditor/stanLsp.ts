@@ -70,7 +70,7 @@ export const setupStanLsp = (monacoInstance: typeof Monaco) => {
     name: "StanLSP",
     type: "module",
   });
-  const transport = monacoInstance.lsp.createTransportToWorker(worker); //.log();
+  const transport = monacoInstance.lsp.createTransportToWorker(worker).log();
 
   new StanLspClient(transport);
 };
