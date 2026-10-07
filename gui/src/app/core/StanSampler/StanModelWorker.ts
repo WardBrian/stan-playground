@@ -38,12 +38,13 @@ const progressPrintCallback = (msg: string) => {
   if (!msg) {
     return;
   }
+  console.log(msg);
   if (!msg.startsWith("Chain") && !msg.startsWith("Iteration:")) {
     // storing this has a not-insignificant overhead when a model
     // has print statements, but is much faster than posting
     // every single line to the main thread
     consoleMessages.push({ text: msg, type: "log" });
-    console.log(msg);
+    // console.log(msg);
     return;
   }
   const report = parseProgress(msg);
@@ -88,7 +89,10 @@ self.onmessage = (e: MessageEvent<StanModelRequestMessage>) => {
       }
       try {
         consoleMessages = [];
-        const { paramNames, draws } = model.sample(e.data.sampleConfig);
+        const { paramNames, draws } = model.sample({
+          ...e.data.sampleConfig,
+          num_threads: 4,
+        });
         // TODO? use an ArrayBuffer so we can transfer without serialization cost
         postReply({
           purpose: Replies.StanReturn,

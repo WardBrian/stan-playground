@@ -29,7 +29,7 @@ RUN mkdir oneTBB/build && cd oneTBB/build && \
     -DBUILD_SHARED_LIBS=OFF \
     -DTBB_EXAMPLES=OFF \
     -DTBB_TEST=OFF \
-    -DEMSCRIPTEN_WITHOUT_PTHREAD=true \
+    -DEMSCRIPTEN_WITHOUT_PTHREAD=false \
     -DCMAKE_INSTALL_PREFIX=/app/oneTBB/install/ && \
     cmake --build . -j$(nproc) && \
     cmake --install .

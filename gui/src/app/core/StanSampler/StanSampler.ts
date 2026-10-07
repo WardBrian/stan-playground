@@ -114,6 +114,7 @@ const makeSamplerConfig = (samplingOpts: SamplingOpts, data: string) => {
     // but by doing it ourselves we can e.g. store it in the csv file zip
     seed: samplingOpts.seed ?? Math.floor(Math.random() * Math.pow(2, 32)),
     refresh,
+    num_threads: samplingOpts.num_chains,
   };
 };
 
